@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valongo RP — Serveur FiveM Roleplay US</title>
+<!-- Tailwind CSS & Inter / Oswald Fonts -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- FontAwesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            50: '#eff6ff',
+            100: '#dbeafe',
+            500: '#3b82f6',
+            600: '#2563eb',
+            700: '#1d4ed8',
+            800: '#1e40af',
+            900: '#0052ff', // Valongo Vivid Blue
+            dark: '#080e1a',
+            card: '#0f172a',
+            surface: '#1e293b'
+          }
+        },
+        fontFamily: {
+          title: ['Oswald', 'sans-serif'],
+          sans: ['Inter', 'sans-serif']
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  .glow-blue { box-shadow: 0 0 25px rgba(0, 82, 255, 0.4); }
+  .glow-blue-sm { box-shadow: 0 0 12px rgba(0, 82, 255, 0.25); }
+  .bg-grid { background-image: radial-gradient(rgba(0, 82, 255, 0.15) 1px, transparent 0); background-size: 24px 24px; }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #080e1a; }
+  ::-webkit-scrollbar-thumb { background: #0052ff; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+
+  /* Admin Editing Visual Highlights */
+  body.admin-mode [contenteditable="true"] {
+    outline: 2px dashed #0052ff !important;
+    outline-offset: 3px;
+    border-radius: 4px;
+    transition: outline 0.2s ease;
+  }
+  body.admin-mode [contenteditable="true"]:hover {
+    outline: 2px solid #2563eb !important;
+    background: rgba(0, 82, 255, 0.08);
+  }
+  .editable-image-container { position: relative; }
+  body.admin-mode .editable-image-container::after {
+    content: "📷 Modifier Image";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 82, 255, 0.9);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 20;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+
+  /* Admin Action Buttons on Cards */
+  .card-admin-tools {
+    display: none;
+  }
+  body.admin-mode .card-admin-tools {
+    display: flex;
+  }
+</style>
+</head>
+<body class="bg-brand-dark text-slate-100 font-sans min-h-screen flex flex-col selection:bg-brand-900 selection:text-white">
+
+  <!-- ================= ADMIN TOOLBAR (FLOATING DOCK) ================= -->
+  <div id="adminLiveToolbar" class="fixed bottom-6 right-6 z-50 hidden flex-col sm:flex-row items-center gap-3 bg-slate-900/95 border-2 border-brand-500 p-3 rounded-2xl shadow-2xl backdrop-blur-md">
+    <div class="flex items-center gap-2 px-3 py-1 bg-brand-900/40 rounded-xl border border-brand-500/40">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+      <span class="text-xs font-bold text-white tracking-wider uppercase">Mode Édition Actif</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="openAddDirectoryModal()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md">
+        <i class="fa-solid fa-plus"></i> Ajouter Carte
+      </button>
+
+      <button onclick="openAdminModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-slate-700">
+        <i class="fa-solid fa-sliders"></i> Admin & GitHub
+      </button>
+
+      <button onclick="saveToGitHub()" class="px-3 py-2 bg-brand-900 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg" title="Sauvegarde automatique en ligne">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder & Sync
+      </button>
+
+      <button onclick="exportFullHTML()" class="px-3 py-2 bg-purple-900/80 hover:bg-purple-600 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg" title="Télécharger le fichier HTML">
+        <i class="fa-solid fa-download"></i> Exporter
+      </button>
+
+      <button onclick="adminLogout()" class="px-2.5 py-2 bg-red-900/60 hover:bg-red-600 text-red-200 rounded-xl text-xs font-bold transition-all" title="Déconnexion Admin">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= HEADER & NAV ================= -->
+  <header class="sticky top-0 z-40 bg-brand-dark/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- Logo avec déclencheur Admin -->
+      <a href="#" class="flex items-center gap-3 group select-none cursor-pointer" title="Valongo RP">
+        <div class="h-12 w-12 rounded-xl bg-brand-900 flex items-center justify-center p-2 shadow-lg shadow-brand-900/30 group-hover:scale-105 transition-transform editable-image-container" onclick="adminChangeLogo(event)">
+          <img id="navLogoImg" src="https://placehold.co/180x180/0052ff/ffffff?text=V" alt="Valongo RP Logo" class="w-full h-full object-contain">
+        </div>
+        <div class="flex flex-col">
+          <span class="font-title text-2xl font-bold tracking-wider text-white group-hover:text-brand-500 transition-colors uppercase" id="navBrandName" data-editable>VALONGO</span>
+          <span class="text-xs text-brand-500 font-semibold tracking-widest uppercase -mt-1" id="navBrandSub" data-editable>ROLEPLAY US</span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden md:flex items-center gap-6 font-medium text-sm">
+        <a href="#about" class="hover:text-brand-500 transition-colors py-1">À propos</a>
+        <a href="#directory" class="hover:text-brand-500 transition-colors py-1">Entreprises & Gangs</a>
+        <a href="#jobs" class="hover:text-brand-500 transition-colors py-1">Services</a>
+        <a href="#economy" class="hover:text-brand-500 transition-colors py-1">Économie</a>
+        <a href="#gallery" class="hover:text-brand-500 transition-colors py-1">Galerie</a>
+        <a href="#rules" class="hover:text-brand-500 transition-colors py-1">Règlement</a>
+        <a href="#apply" class="hover:text-brand-500 transition-colors py-1">Postuler</a>
+        <a href="#faq" class="hover:text-brand-500 transition-colors py-1">FAQ</a>
+      </nav>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-3">
+        <button id="adminLoginBtn" onclick="openLoginModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-title text-sm tracking-wider flex items-center gap-2 transition-all">
+          <i class="fa-solid fa-lock text-brand-500"></i> <span>ADMIN</span>
+        </button>
+
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors" title="Changer le thème">
+          <i class="fa-solid fa-moon text-lg" id="themeIcon"></i>
+        </button>
+        <a href="#join" id="headerJoinBtn" class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-title text-lg tracking-wide bg-brand-900 hover:bg-brand-600 text-white shadow-lg shadow-brand-900/30 hover:scale-105 transition-all">
+          <i class="fa-solid fa-play text-xs"></i> <span id="headerJoinText" data-editable>REJOINDRE</span>
+        </a>
+
+        <!-- Mobile Menu Toggle -->
+        <button onclick="toggleMobileMenu()" class="md:hidden p-2.5 rounded-lg bg-slate-800 text-slate-300">
+          <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Nav Menu -->
+    <div id="mobileMenu" class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-6 space-y-3">
+      <a href="#about" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-brand-500 font-medium">À propos</a>
+      <a href="#directory" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-brand-500 font-medium">Entreprises & Gangs</a>
+      <a href="#jobs" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-brand-500 font-medium">Services</a>
+      <a href="#economy" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-brand-500 font-medium">Économie</a>
+      <a href="#gallery" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-brand-500 font-medium">Galerie</a>
+      <a href="#rules" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-brand-500 font-medium">Règlement</a>
+      <a href="#apply" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-brand-500 font-medium">Postuler</a>
+      <a href="#faq" onclick="toggleMobileMenu()" class="block py-2 text-slate-300 hover:text-brand-500 font-medium">FAQ</a>
+      <a href="#join" onclick="toggleMobileMenu()" class="inline-block w-full text-center py-3 rounded-lg font-title text-lg bg-brand-900 text-white">REJOINDRE LE SERVEUR</a>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+    
+    <!-- ================= HERO SECTION ================= -->
+    <section id="join" class="relative min-h-[85vh] flex items-center justify-center overflow-hidden bg-grid py-20 px-4">
+      <div class="absolute inset-0 bg-gradient-to-b from-brand-900/20 via-brand-dark/80 to-brand-dark z-0"></div>
+      
+      <div id="heroBgImage" class="absolute inset-0 bg-cover bg-center opacity-25 z-0 transition-all editable-image-container" onclick="adminChangeHeroBg(event)" style="background-image: url('https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=80');"></div>
+
+      <div class="relative z-10 max-w-5xl mx-auto text-center space-y-8">
+        
+        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-slate-900/90 border border-brand-500/30 backdrop-blur-md shadow-xl">
+          <span class="relative flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </span>
+          <span class="text-xs sm:text-sm font-semibold text-slate-200 uppercase tracking-wider" data-editable>SERVEUR WHITELIST &amp; FREE-ACCESS</span>
+        </div>
+
+        <div class="flex flex-col items-center justify-center gap-4">
+          <div class="editable-image-container cursor-pointer" onclick="adminChangeLogo(event)">
+            <img id="mainLogoImg" src="https://placehold.co/180x180/0052ff/ffffff?text=V" alt="Valongo RP Logo" class="h-32 sm:h-44 w-auto object-contain rounded-2xl shadow-2xl glow-blue">
+          </div>
+          <h1 id="heroTitle" class="font-title text-5xl sm:text-7xl lg:text-8xl font-extrabold tracking-tight text-white uppercase drop-shadow-md" data-editable>
+            VALONGO <span class="text-brand-500">ROLEPLAY</span>
+          </h1>
+        </div>
+
+        <p id="heroSubtitle" class="max-w-3xl mx-auto text-lg sm:text-xl text-slate-300 font-normal leading-relaxed" data-editable>
+          Plongez au cœur d'une expérience américaine ultra-immersive sur FiveM. Économie équilibrée, entreprises gérées par les joueurs et RP libre sans pré-inscription obligatoire.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <a href="#join" id="heroCtaPrimary" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-brand-900 hover:bg-brand-600 font-title text-xl text-white tracking-wider shadow-xl glow-blue hover:scale-105 transition-all text-center">
+            <i class="fa-solid fa-gamepad mr-2"></i> <span data-editable>REJOINDRE MAINTENANT</span>
+          </a>
+          <a href="#directory" id="heroCtaSecondary" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-800/90 hover:bg-slate-700 font-title text-xl text-white tracking-wider border border-slate-700 hover:scale-105 transition-all text-center">
+            <i class="fa-solid fa-city mr-2"></i> <span data-editable>DÉCOUVRIR LES GANGS & ENTREPRISES</span>
+          </a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= STATS COUNTER ================= -->
+    <section class="border-y border-slate-800 bg-slate-900/50 py-10">
+      <div class="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div class="p-4">
+          <div class="font-title text-4xl sm:text-5xl font-bold text-brand-500" data-editable>100%</div>
+          <div class="text-sm font-medium text-slate-400 uppercase tracking-wider mt-1" data-editable>Francophone</div>
+        </div>
+        <div class="p-4">
+          <div class="font-title text-4xl sm:text-5xl font-bold text-brand-500" data-editable>ESX / QBCore</div>
+          <div class="text-sm font-medium text-slate-400 uppercase tracking-wider mt-1" data-editable>Optimisé 60 FPS</div>
+        </div>
+        <div class="p-4">
+          <div class="font-title text-4xl sm:text-5xl font-bold text-brand-500" data-editable>USA</div>
+          <div class="text-sm font-medium text-slate-400 uppercase tracking-wider mt-1" data-editable>Économie Équilibrée</div>
+        </div>
+        <div class="p-4">
+          <div class="font-title text-4xl sm:text-5xl font-bold text-brand-500" data-editable>24/7</div>
+          <div class="text-sm font-medium text-slate-400 uppercase tracking-wider mt-1" data-editable>Staff Actif</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ABOUT & FEATURES ================= -->
+    <section id="about" class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <h2 class="font-title text-4xl sm:text-5xl font-bold tracking-tight uppercase" data-editable>
+          LE SERVEUR <span class="text-brand-500">VALONGO RP</span>
+        </h2>
+        <div class="h-1.5 w-24 bg-brand-900 mx-auto rounded-full"></div>
+        <p class="text-slate-300 text-lg leading-relaxed" data-editable>
+          Pensé pour favoriser les interactions roleplay spontanées et de qualité. Aucune lourdeur administrative : incarnez directement votre personnage en ville !
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="featuresContainer">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 hover:border-brand-500/50 transition-all hover:-translate-y-1 group">
+          <div class="h-44 w-full rounded-xl overflow-hidden mb-5 bg-slate-800 editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+            <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80" alt="Logements" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+          </div>
+          <h3 class="font-title text-2xl font-bold text-white mb-2 group-hover:text-brand-500 transition-colors" data-editable>🏠 Logements & Clés</h3>
+          <p class="text-slate-400 text-sm leading-relaxed" data-editable>Achetez, louez et décorez votre propre intérieur. Stockez vos affaires et invitez vos amis.</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 hover:border-brand-500/50 transition-all hover:-translate-y-1 group">
+          <div class="h-44 w-full rounded-xl overflow-hidden mb-5 bg-slate-800 editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+            <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80" alt="Véhicules" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+          </div>
+          <h3 class="font-title text-2xl font-bold text-white mb-2 group-hover:text-brand-500 transition-colors" data-editable>🚗 Garages & Import</h3>
+          <p class="text-slate-400 text-sm leading-relaxed" data-editable>Large choix de véhicules importés réalistes avec système de customisation avancée et mécanique.</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 hover:border-brand-500/50 transition-all hover:-translate-y-1 group">
+          <div class="h-44 w-full rounded-xl overflow-hidden mb-5 bg-slate-800 editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+            <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80" alt="Banque" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+          </div>
+          <h3 class="font-title text-2xl font-bold text-white mb-2 group-hover:text-brand-500 transition-colors" data-editable>🏦 Système Bancaire</h3>
+          <p class="text-slate-400 text-sm leading-relaxed" data-editable>Gérez vos comptes bancaires, virements entre joueurs, factures d'entreprises et prêts bancaires.</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 hover:border-brand-500/50 transition-all hover:-translate-y-1 group">
+          <div class="h-44 w-full rounded-xl overflow-hidden mb-5 bg-slate-800 editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+            <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80" alt="Inventaire" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+          </div>
+          <h3 class="font-title text-2xl font-bold text-white mb-2 group-hover:text-brand-500 transition-colors" data-editable>🎒 Inventaire Moderne</h3>
+          <p class="text-slate-400 text-sm leading-relaxed" data-editable>Interface fluide en drag & drop, ciblage 3D interactif et animations réalistes.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DYNAMIC GANGS & ENTREPRISES DIRECTORY ================= -->
+    <section id="directory" class="py-24 bg-slate-900/60 border-y border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div>
+            <h2 class="font-title text-4xl sm:text-5xl font-bold tracking-tight uppercase" data-editable>
+              ANNUAIRE <span class="text-brand-500">ENTREPRISES & GANGS</span>
+            </h2>
+            <p class="text-slate-400 mt-2" data-editable>Découvrez toutes les organisations actives en ville, leurs activités et leurs sites/liens officiels.</p>
+          </div>
+          
+          <div class="flex flex-wrap gap-2">
+            <button onclick="filterDirectory('all')" id="dirTab-all" class="dir-tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-brand-900 text-white transition-all">Tous</button>
+            <button onclick="filterDirectory('entreprise')" id="dirTab-entreprise" class="dir-tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">Entreprises</button>
+            <button onclick="filterDirectory('gang')" id="dirTab-gang" class="dir-tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">Gangs & Illégal</button>
+            <button onclick="filterDirectory('service')" id="dirTab-service" class="dir-tab-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">Services Publics</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="directoryGrid">
+          <!-- Item 1: LSPD -->
+          <div class="directory-card bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-brand-500/50 transition-all flex flex-col justify-between relative group" data-category="service">
+            <div class="card-admin-tools absolute top-3 right-3 z-30 gap-2">
+              <button onclick="deleteCard(this)" class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs shadow-md" title="Supprimer la carte"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <div>
+              <div class="h-48 w-full bg-slate-800 relative editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+                <span class="absolute top-3 left-3 bg-brand-900 text-white text-xs px-3 py-1 rounded-full font-bold uppercase shadow-lg" data-editable>Service Public</span>
+              </div>
+              <div class="p-6">
+                <h3 class="font-title text-2xl font-bold text-white mb-2" data-editable>Los Santos Police Dept.</h3>
+                <p class="text-slate-400 text-sm leading-relaxed mb-4" data-editable>Forces de l'ordre de la ville de Valongo. Patrouilles, interventions d'urgence et enquêtes judiciaires.</p>
+              </div>
+            </div>
+            <div class="p-6 pt-0 flex items-center justify-between gap-3">
+              <a href="https://discord.gg" target="_blank" class="flex-grow text-center py-2.5 bg-brand-900/40 hover:bg-brand-900 border border-brand-500/40 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5">
+                <i class="fa-brands fa-discord"></i> Discord
+              </a>
+              <a href="#apply" onclick="selectApplyCategory('LSPD')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition-all" title="Postuler">
+                <i class="fa-solid fa-file-pen"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Item 2: Customs Mechanic -->
+          <div class="directory-card bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-brand-500/50 transition-all flex flex-col justify-between relative group" data-category="entreprise">
+            <div class="card-admin-tools absolute top-3 right-3 z-30 gap-2">
+              <button onclick="deleteCard(this)" class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs shadow-md" title="Supprimer la carte"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <div>
+              <div class="h-48 w-full bg-slate-800 relative editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+                <span class="absolute top-3 left-3 bg-emerald-600 text-white text-xs px-3 py-1 rounded-full font-bold uppercase shadow-lg" data-editable>Entreprise</span>
+              </div>
+              <div class="p-6">
+                <h3 class="font-title text-2xl font-bold text-white mb-2" data-editable>Valongo Customs & Tuning</h3>
+                <p class="text-slate-400 text-sm leading-relaxed mb-4" data-editable>Atelier de réparation automobile haut de gamme, modifications de performances et peinture personnalisée.</p>
+              </div>
+            </div>
+            <div class="p-6 pt-0 flex items-center justify-between gap-3">
+              <a href="https://discord.gg" target="_blank" class="flex-grow text-center py-2.5 bg-emerald-900/40 hover:bg-emerald-600 border border-emerald-500/40 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5">
+                <i class="fa-brands fa-discord"></i> Discord
+              </a>
+              <a href="#apply" onclick="selectApplyCategory('Mécano')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition-all" title="Postuler">
+                <i class="fa-solid fa-file-pen"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Item 3: Ballas Gang -->
+          <div class="directory-card bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-brand-500/50 transition-all flex flex-col justify-between relative group" data-category="gang">
+            <div class="card-admin-tools absolute top-3 right-3 z-30 gap-2">
+              <button onclick="deleteCard(this)" class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs shadow-md" title="Supprimer la carte"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <div>
+              <div class="h-48 w-full bg-slate-800 relative editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+                <span class="absolute top-3 left-3 bg-purple-700 text-white text-xs px-3 py-1 rounded-full font-bold uppercase shadow-lg" data-editable>Gang Officiel</span>
+              </div>
+              <div class="p-6">
+                <h3 class="font-title text-2xl font-bold text-white mb-2" data-editable>Vagos / Ballas Syndicate</h3>
+                <p class="text-slate-400 text-sm leading-relaxed mb-4" data-editable>Organisation criminelle contrôlant les quartiers sud. Trafic d'armes et contrôle de territoires.</p>
+              </div>
+            </div>
+            <div class="p-6 pt-0 flex items-center justify-between gap-3">
+              <a href="https://discord.gg" target="_blank" class="w-full text-center py-2.5 bg-purple-900/40 hover:bg-purple-700 border border-purple-500/40 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5">
+                <i class="fa-brands fa-discord"></i> Contacter via Discord
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= JOBS & FACTIONS ================= -->
+    <section id="jobs" class="py-24 bg-slate-900/40 border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-12 space-y-4">
+          <h2 class="font-title text-4xl sm:text-5xl font-bold tracking-tight uppercase" data-editable>
+            MÉTIERS & <span class="text-brand-500">FACTIONS</span>
+          </h2>
+          <div class="h-1.5 w-24 bg-brand-900 mx-auto rounded-full"></div>
+          <p class="text-slate-300" data-editable>Construisez la carrière de votre choix, du citoyen exemplaire au chef d'organisation.</p>
+        </div>
+
+        <div class="flex justify-center gap-3 mb-10 flex-wrap">
+          <button onclick="switchJobTab('public')" id="tabBtn-public" class="job-tab-btn px-6 py-3 rounded-xl font-title text-lg tracking-wider bg-brand-900 text-white shadow-lg transition-all">
+            <i class="fa-solid fa-shield-halved mr-2"></i> SERVICES PUBLICS
+          </button>
+          <button onclick="switchJobTab('civilians')" id="tabBtn-civilians" class="job-tab-btn px-6 py-3 rounded-xl font-title text-lg tracking-wider bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">
+            <i class="fa-solid fa-briefcase mr-2"></i> CIVILS & ENTREPRISES
+          </button>
+          <button onclick="switchJobTab('illegal')" id="tabBtn-illegal" class="job-tab-btn px-6 py-3 rounded-xl font-title text-lg tracking-wider bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">
+            <i class="fa-solid fa-mask mr-2"></i> ILLÉGAL & GANGS
+          </button>
+        </div>
+
+        <!-- Job Panels Content -->
+        <div id="jobPanel-public" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 flex flex-col justify-between">
+            <div>
+              <div class="h-40 bg-slate-800 rounded-xl mb-4 overflow-hidden editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+              </div>
+              <h3 class="font-title text-2xl font-bold text-brand-500 mb-2" data-editable>LSPD / Sheriff</h3>
+              <p class="text-slate-300 text-sm mb-4" data-editable>Assurez la sécurité des citoyens, patrouillez dans le comté et menez des enquêtes d'envergure.</p>
+            </div>
+            <a href="#apply" onclick="selectApplyCategory('LSPD')" class="block w-full text-center py-2.5 bg-brand-900/40 hover:bg-brand-900 border border-brand-500/40 text-white font-semibold rounded-xl text-sm transition-all">
+              Postuler en LSPD
+            </a>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 flex flex-col justify-between">
+            <div>
+              <div class="h-40 bg-slate-800 rounded-xl mb-4 overflow-hidden editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+              </div>
+              <h3 class="font-title text-2xl font-bold text-emerald-400 mb-2" data-editable>EMS / Secours</h3>
+              <p class="text-slate-300 text-sm mb-4" data-editable>Intervenez sur les accidents, soignez les blessés et gérez l'hôpital central de Los Santos.</p>
+            </div>
+            <a href="#apply" onclick="selectApplyCategory('EMS')" class="block w-full text-center py-2.5 bg-emerald-900/40 hover:bg-emerald-600 border border-emerald-500/40 text-white font-semibold rounded-xl text-sm transition-all">
+              Postuler en EMS
+            </a>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 flex flex-col justify-between">
+            <div>
+              <div class="h-40 bg-slate-800 rounded-xl mb-4 overflow-hidden editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+              </div>
+              <h3 class="font-title text-2xl font-bold text-amber-400 mb-2" data-editable>Justice & Gouvernement</h3>
+              <p class="text-slate-300 text-sm mb-4" data-editable>Avocats, juges et maires pour faire respecter les lois de l'état et régir l'administration.</p>
+            </div>
+            <a href="#apply" onclick="selectApplyCategory('Gouvernement')" class="block w-full text-center py-2.5 bg-amber-900/40 hover:bg-amber-600 border border-amber-500/40 text-white font-semibold rounded-xl text-sm transition-all">
+              Postuler au Gouvernement
+            </a>
+          </div>
+        </div>
+
+        <div id="jobPanel-civilians" class="grid grid-cols-1 md:grid-cols-3 gap-8 hidden">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 flex flex-col justify-between">
+            <div>
+              <div class="h-40 bg-slate-800 rounded-xl mb-4 overflow-hidden editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+              </div>
+              <h3 class="font-title text-2xl font-bold text-brand-500 mb-2" data-editable>Mécanicien / Customs</h3>
+              <p class="text-slate-300 text-sm mb-4" data-editable>Dépannage sur autoroute, remorquage, customisation esthétique et préparation moteur.</p>
+            </div>
+            <a href="#apply" onclick="selectApplyCategory('Mécano')" class="block w-full text-center py-2.5 bg-brand-900/40 hover:bg-brand-900 border border-brand-500/40 text-white font-semibold rounded-xl text-sm transition-all">Postuler</a>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 flex flex-col justify-between">
+            <div>
+              <div class="h-40 bg-slate-800 rounded-xl mb-4 overflow-hidden editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+              </div>
+              <h3 class="font-title text-2xl font-bold text-emerald-400 mb-2" data-editable>Restaurants & Bars</h3>
+              <p class="text-slate-300 text-sm mb-4" data-editable>Gérez des enseignes (Hookies Diner, bars de plage) et organisez des soirées animées.</p>
+            </div>
+            <a href="#apply" onclick="selectApplyCategory('Commerce')" class="block w-full text-center py-2.5 bg-emerald-900/40 hover:bg-emerald-600 border border-emerald-500/40 text-white font-semibold rounded-xl text-sm transition-all">Postuler</a>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 flex flex-col justify-between">
+            <div>
+              <div class="h-40 bg-slate-800 rounded-xl mb-4 overflow-hidden editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+              </div>
+              <h3 class="font-title text-2xl font-bold text-purple-400 mb-2" data-editable>Immobilier & Concession</h3>
+              <p class="text-slate-300 text-sm mb-4" data-editable>Vendez des véhicules neufs/imports et gérez le parc immobilier de la ville.</p>
+            </div>
+            <a href="#apply" onclick="selectApplyCategory('Concession')" class="block w-full text-center py-2.5 bg-purple-900/40 hover:bg-purple-700 border border-purple-500/40 text-white font-semibold rounded-xl text-sm transition-all">Postuler</a>
+          </div>
+        </div>
+
+        <div id="jobPanel-illegal" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 flex flex-col justify-between">
+            <div>
+              <div class="h-40 bg-slate-800 rounded-xl mb-4 overflow-hidden editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+              </div>
+              <h3 class="font-title text-2xl font-bold text-red-500 mb-2" data-editable>Gangs & Syndicats</h3>
+              <p class="text-slate-300 text-sm mb-4" data-editable>Implantation de quartiers, contrôle de territoires, blanchiment d'argent et trafic illégal.</p>
+            </div>
+            <a href="#directory" class="block w-full text-center py-2.5 bg-red-900/40 hover:bg-red-700 border border-red-500/40 text-white font-semibold rounded-xl text-sm transition-all">Voir l'annuaire illégal</a>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 flex flex-col justify-between">
+            <div>
+              <div class="h-40 bg-slate-800 rounded-xl mb-4 overflow-hidden editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+                <img src="https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover">
+              </div>
+              <h3 class="font-title text-2xl font-bold text-amber-500 mb-2" data-editable>Braquages & Contrebande</h3>
+              <p class="text-slate-300 text-sm mb-4" data-editable>Planifiez des braquages de supérettes, de banques ou du Pacific Standard avec votre crew.</p>
+            </div>
+            <a href="#rules" class="block w-full text-center py-2.5 bg-amber-900/40 hover:bg-amber-700 border border-amber-500/40 text-white font-semibold rounded-xl text-sm transition-all">Consulter le règlement illégal</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= ECONOMY & SIMULATOR ================= -->
+    <section id="economy" class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="space-y-6">
+          <h2 class="font-title text-4xl sm:text-5xl font-bold tracking-tight uppercase" data-editable>
+            UNE ÉCONOMIE <span class="text-brand-500">RÉALISTE & STABLE</span>
+          </h2>
+          <p class="text-slate-300 leading-relaxed" data-editable>
+            Chez Valongo RP, l'argent a une valeur réelle. Les salaires sont indexés sur l'activité des entreprises et chaque investissement immobilier ou automobile se mérite.
+          </p>
+          <ul class="space-y-3 text-slate-300">
+            <li class="flex items-center gap-3"><i class="fa-solid fa-check text-brand-500"></i> <span data-editable>Salaires versés directement sur compte bancaire</span></li>
+            <li class="flex items-center gap-3"><i class="fa-solid fa-check text-brand-500"></i> <span data-editable>Gestion d'entreprise libre par les actionnaires</span></li>
+            <li class="flex items-center gap-3"><i class="fa-solid fa-check text-brand-500"></i> <span data-editable>Système de taxes étatiques et aides sociales</span></li>
+          </ul>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
+          <h3 class="font-title text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <i class="fa-solid fa-calculator text-brand-500"><span> Simulateur de Salaire</span></i>
+          </h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Heures de jeu par semaine : <span id="hoursVal" class="text-brand-500 font-bold">15h</span></label>
+              <input type="range" min="2" max="40" value="15" id="simHours" oninput="calculateEconomy()" class="w-full accent-brand-500 bg-slate-800 rounded-lg h-2">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Activité / Métier :</label>
+              <select id="simJob" onchange="calculateEconomy()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm">
+                <option value="1200">Employé / Civil (Standard)</option>
+                <option value="2200">Mécanicien / Commerce</option>
+                <option value="3500">LSPD / EMS / Cadre</option>
+              </select>
+            </div>
+            <div class="p-6 rounded-2xl bg-brand-900/20 border border-brand-500/30 text-center mt-6">
+              <span class="text-xs text-slate-400 uppercase tracking-widest block mb-1">Revenu estimé hebdomadaire</span>
+              <span id="simResult" class="font-title text-4xl font-bold text-brand-500">$33,000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= GALLERY SECTION ================= -->
+    <section id="gallery" class="py-24 bg-slate-900/60 border-y border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <h2 class="font-title text-4xl sm:text-5xl font-bold tracking-tight uppercase" data-editable>
+            GALERIE <span class="text-brand-500">PHOTO</span>
+          </h2>
+          <div class="h-1.5 w-24 bg-brand-900 mx-auto rounded-full"></div>
+          <p class="text-slate-300" data-editable>Quelques moments capturés en ville par notre communauté.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="h-64 rounded-2xl overflow-hidden bg-slate-800 editable-image-container cursor-pointer group" onclick="adminChangeCardImage(this)">
+            <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+          </div>
+          <div class="h-64 rounded-2xl overflow-hidden bg-slate-800 editable-image-container cursor-pointer group" onclick="adminChangeCardImage(this)">
+            <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+          </div>
+          <div class="h-64 rounded-2xl overflow-hidden bg-slate-800 editable-image-container cursor-pointer group" onclick="adminChangeCardImage(this)">
+            <img src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RULES SECTION ================= -->
+    <section id="rules" class="py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <h2 class="font-title text-4xl sm:text-5xl font-bold tracking-tight uppercase" data-editable>
+          RÈGLEMENT <span class="text-brand-500">GÉNÉRAL</span>
+        </h2>
+        <div class="h-1.5 w-24 bg-brand-900 mx-auto rounded-full"></div>
+        <p class="text-slate-300" data-editable>Les règles fondamentales pour garantir un roleplay de qualité pour tous.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <h3 class="font-title text-xl font-bold text-white mb-2 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-brand-900/50 text-brand-500 flex items-center justify-center text-sm font-bold">01</span>
+            <span data-editable>Fair-Play & Powergaming</span>
+          </h3>
+          <p class="text-slate-300 text-sm pl-11" data-editable>Le roleplay prime sur le gain. Forcer des actions impossibles ou refuser le jeu adverse est passible de sanctions immédiates.</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <h3 class="font-title text-xl font-bold text-white mb-2 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-brand-900/50 text-brand-500 flex items-center justify-center text-sm font-bold">02</span>
+            <span data-editable>New Life Rule (NLR)</span>
+          </h3>
+          <p class="text-slate-300 text-sm pl-11" data-editable>En cas de coma profond (mort RP / respawn hôpital), vous oubliez les circonstances directes de votre mort et ne pouvez retourner sur les lieux pendant 30 minutes.</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <h3 class="font-title text-xl font-bold text-white mb-2 flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-brand-900/50 text-brand-500 flex items-center justify-center text-sm font-bold">03</span>
+            <span data-editable>Meta-Gaming & Stream-Snacking</span>
+          </h3>
+          <p class="text-slate-300 text-sm pl-11" data-editable>L'utilisation d'informations obtenues en dehors de votre personnage (Discord, Live Twitch) en jeu est strictement interdite.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= APPLY / WHITELIST FORM ================= -->
+    <section id="apply" class="py-24 bg-slate-900/60 border-y border-slate-800">
+      <div class="max-w-3xl mx-auto px-4">
+        <div class="text-center mb-12 space-y-4">
+          <h2 class="font-title text-4xl sm:text-5xl font-bold tracking-tight uppercase" data-editable>
+            FORMULAIRE DE <span class="text-brand-500">CANDIDATURE</span>
+          </h2>
+          <p class="text-slate-300" data-editable>Postulez pour rejoindre une faction ou une entreprise en ville.</p>
+        </div>
+
+        <form id="applyForm" onsubmit="submitApplication(event)" class="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Nom & Prénom RP</label>
+              <input type="text" id="applyName" required placeholder="John Doe" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-brand-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Tag Discord</label>
+              <input type="text" id="applyDiscord" required placeholder="username#0000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-brand-500 outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Poste souhaité</label>
+            <select id="applyRole" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-brand-500 outline-none">
+              <option value="LSPD">LSPD / Forces de l'ordre</option>
+              <option value="EMS">EMS / Secours</option>
+              <option value="Mécano">Mécanicien / Customs</option>
+              <option value="Commerce">Commerce / Restauration</option>
+              <option value="Gouvernement">Gouvernement / Justice</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Motivation & Expérience Roleplay</label>
+            <textarea id="applyMotivation" rows="5" required placeholder="Décrivez votre personnage et vos motivations..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-brand-500 outline-none"></textarea>
+          </div>
+          <button type="submit" class="w-full py-4 rounded-xl bg-brand-900 hover:bg-brand-600 font-title text-lg text-white tracking-wider shadow-lg transition-all">
+            ENVOYER LA CANDIDATURE
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================= FAQ SECTION ================= -->
+    <section id="faq" class="py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16 space-y-4">
+        <h2 class="font-title text-4xl sm:text-5xl font-bold tracking-tight uppercase" data-editable>
+          QUESTIONS <span class="text-brand-500">FRÉQUENTES</span>
+        </h2>
+        <div class="h-1.5 w-24 bg-brand-900 mx-auto rounded-full"></div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 cursor-pointer" onclick="toggleFaq(this)">
+          <div class="flex items-center justify-between font-title text-xl text-white">
+            <span data-editable>Le serveur est-il ouvert à tous (Free-Access) ?</span>
+            <i class="fa-solid fa-chevron-down text-brand-500 transition-transform"></i>
+          </div>
+          <div class="text-slate-300 text-sm mt-4 hidden leading-relaxed" data-editable>
+            Oui, Valongo RP est accessible sans whitelist stricte pour les civils. Seules les factions (LSPD, EMS, gérants d'entreprise) requièrent une candidature.
+          </div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 cursor-pointer" onclick="toggleFaq(this)">
+          <div class="flex items-center justify-between font-title text-xl text-white">
+            <span data-editable>Comment nous rejoindre sur FiveM ?</span>
+            <i class="fa-solid fa-chevron-down text-brand-500 transition-transform"></i>
+          </div>
+          <div class="text-slate-300 text-sm mt-4 hidden leading-relaxed" data-editable>
+            Rejoignez notre Discord officiel pour obtenir toutes les informations de connexion et débuter votre aventure en ville.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-brand-dark border-t border-slate-800 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-brand-900 flex items-center justify-center p-2 text-white font-title font-bold">V</div>
+        <span class="font-title text-xl tracking-wider text-white uppercase">VALONGO ROLEPLAY</span>
+      </div>
+      <p class="text-xs text-slate-500 text-center md:text-left">
+        © 2026 Valongo RP. Tous droits réservés. Non affilié à Rockstar Games ou Take-Two Interactive.
+      </p>
+      <div class="flex items-center gap-4 text-slate-400">
+        <a href="https://discord.gg" target="_blank" class="hover:text-brand-500 transition-colors"><i class="fa-brands fa-discord text-xl"></i></a>
+        <a href="https://twitter.com" target="_blank" class="hover:text-brand-500 transition-colors"><i class="fa-brands fa-twitter text-xl"></i></a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= MODALS & OVERLAYS ================= -->
+  <!-- Admin Login Modal -->
+  <div id="loginModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl relative">
+      <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      <h3 class="font-title text-2xl font-bold text-white mb-2">Accès Administrateur</h3>
+      <p class="text-slate-400 text-sm mb-6">Entrez le mot de passe administrateur pour activer le mode édition en direct.</p>
+      <input type="password" id="adminPasswordInput" placeholder="Mot de passe..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm mb-4 focus:border-brand-500 outline-none">
+      <button onclick="verifyAdminLogin()" class="w-full py-3 bg-brand-900 hover:bg-brand-600 text-white rounded-xl font-title text-lg tracking-wider">CONNEXION</button>
+    </div>
+  </div>
+
+  <!-- Admin & GitHub Config Modal -->
+  <div id="adminModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeAdminModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      <h3 class="font-title text-2xl font-bold text-white mb-2">Panneau Admin & Configurations</h3>
+      <p class="text-slate-400 text-sm mb-6">Gérez votre webhook Discord et vos paramètres de synchronisation GitHub.</p>
+      <div class="space-y-5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Discord Webhook URL</label>
+          <input type="text" id="webhookUrlInput" placeholder="https://discord.com/api/webhooks/..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-500">
+        </div>
+
+        <!-- Section Paramètres GitHub intégrée dans le panneau admin -->
+        <div class="p-5 bg-slate-800/60 rounded-2xl border border-slate-700/80 space-y-4">
+          <h4 class="font-title text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-brands fa-github text-brand-500"></i> Paramètres GitHub (Sync en ligne)
+          </h4>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Dépôt GitHub (ex: pseudo/repo)</label>
+            <input type="text" id="ghRepoInput" placeholder="mendestoss/valongo-rp" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Token d'accès personnel GitHub (ghp_...)</label>
+            <input type="password" id="ghTokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand-500">
+            <p class="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+              Créez un token sur GitHub (Settings &gt; Developer settings &gt; Personal access tokens) avec la permission <code class="text-brand-500">repo</code> cochée.
+            </p>
+          </div>
+        </div>
+
+        <button onclick="saveAdminConfig()" class="w-full py-3.5 bg-brand-900 hover:bg-brand-600 text-white rounded-xl font-title text-lg tracking-wider shadow-lg">ENREGISTRER LES CONFIGURATIONS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Directory Card Modal (With Local File Upload, Website & Discord) -->
+  <div id="addDirectoryModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeAddDirectoryModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      <h3 class="font-title text-2xl font-bold text-white mb-2">Ajouter une carte Annuaire</h3>
+      <div class="space-y-4 mt-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Titre de l'entreprise / organisation</label>
+          <input type="text" id="newCardTitle" placeholder="Ex: Valongo Motors" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Catégorie</label>
+          <select id="newCardCategory" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none">
+            <option value="entreprise">Entreprise</option>
+            <option value="gang">Gang & Illégal</option>
+            <option value="service">Service Public</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Description</label>
+          <textarea id="newCardDesc" rows="3" placeholder="Description de l'activité..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Image (depuis votre ordinateur)</label>
+          <input type="file" id="newCardImgFile" accept="image/*" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-900 file:text-white hover:file:bg-brand-600 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">URL du Site Web de l'entreprise (Optionnel)</label>
+          <input type="text" id="newCardWebsite" placeholder="https://..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Lien Discord de l'entreprise (Optionnel)</label>
+          <input type="text" id="newCardDiscord" placeholder="https://discord.gg/..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none">
+        </div>
+        <button onclick="confirmAddDirectoryCard()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-title text-lg tracking-wider">CRÉER LA CARTE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // State & Persistence
+    let webhookUrl = localStorage.getItem('valongo_webhook') || '';
+    document.getElementById('webhookUrlInput').value = webhookUrl;
+    document.getElementById('ghRepoInput').value = localStorage.getItem('gh_repo') || '';
+    document.getElementById('ghTokenInput').value = localStorage.getItem('gh_token') || '';
+
+    // Load saved HTML state on startup (fallback if local)
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedHTML = localStorage.getItem('valongo_site_state');
+      if (savedHTML) {
+        document.querySelector('main').innerHTML = savedHTML;
+      }
+    });
+
+    // Theme Toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const icon = document.getElementById('themeIcon');
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        icon.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        html.classList.add('dark');
+        icon.classList.replace('fa-sun', 'fa-moon');
+      }
+    }
+
+    // Mobile Menu Toggle
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    // Directory Filtering
+    function filterDirectory(cat) {
+      document.querySelectorAll('.dir-tab-btn').forEach(btn => {
+        btn.classList.remove('bg-brand-900', 'text-white');
+        btn.classList.add('bg-slate-800', 'text-slate-300');
+      });
+      document.getElementById(`dirTab-${cat}`).classList.replace('bg-slate-800', 'bg-brand-900');
+      document.getElementById(`dirTab-${cat}`).classList.replace('text-slate-300', 'text-white');
+
+      document.querySelectorAll('.directory-card').forEach(card => {
+        if (cat === 'all' || card.dataset.category === cat) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // Job Tab Switcher
+    function switchJobTab(tab) {
+      ['public', 'civilians', 'illegal'].forEach(t => {
+        document.getElementById(`jobPanel-${t}`).classList.add('hidden');
+        document.getElementById(`tabBtn-${t}`).classList.replace('bg-brand-900', 'bg-slate-800');
+        document.getElementById(`tabBtn-${t}`).classList.replace('text-white', 'text-slate-300');
+      });
+      document.getElementById(`jobPanel-${tab}`).classList.remove('hidden');
+      document.getElementById(`tabBtn-${tab}`).classList.replace('bg-slate-800', 'bg-brand-900');
+      document.getElementById(`tabBtn-${tab}`).classList.replace('text-slate-300', 'text-white');
+    }
+
+    // Economy Simulator
+    function calculateEconomy() {
+      const hours = parseInt(document.getElementById('simHours').value);
+      document.getElementById('hoursVal').textContent = hours + 'h';
+      const baseRate = parseInt(document.getElementById('simJob').value);
+      const total = hours * baseRate;
+      document.getElementById('simResult').textContent = '$' + total.toLocaleString();
+    }
+
+    // FAQ Accordion
+    function toggleFaq(el) {
+      const content = el.querySelector('div:last-child');
+      const icon = el.querySelector('i');
+      content.classList.toggle('hidden');
+      icon.classList.toggle('rotate-180');
+    }
+
+    // Select Apply Category helper
+    function selectApplyCategory(cat) {
+      const select = document.getElementById('applyRole');
+      for(let option of select.options) {
+        if(option.value === cat || option.text.includes(cat)) {
+          select.value = option.value;
+          break;
+        }
+      }
+    }
+
+    // Form Submission & Webhook Dispatch
+    function submitApplication(e) {
+      e.preventDefault();
+      const name = document.getElementById('applyName').value;
+      const discord = document.getElementById('applyDiscord').value;
+      const role = document.getElementById('applyRole').value;
+      const motivation = document.getElementById('applyMotivation').value;
+
+      if(webhookUrl) {
+        fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            embeds: [{
+              title: "📥 Nouvelle Candidature Valongo RP",
+              color: 30927,
+              fields: [
+                { name: "Nom RP", value: name, inline: true },
+                { name: "Discord", value: discord, inline: true },
+                { name: "Poste", value: role, inline: true },
+                { name: "Motivation", value: motivation }
+              ],
+              timestamp: new Date().toISOString()
+            }]
+          })
+        }).catch(err => console.log('Webhook error:', err));
+      }
+
+      alert('Candidature envoyée avec succès ! Le staff l\'examinera prochainement.');
+      document.getElementById('applyForm').reset();
+    }
+
+    // Admin Mode Controls (Password: 120813)
+    function openLoginModal() { document.getElementById('loginModal').classList.replace('hidden', 'flex'); }
+    function closeLoginModal() { document.getElementById('loginModal').classList.replace('flex', 'hidden'); }
+    function verifyAdminLogin() {
+      const pass = document.getElementById('adminPasswordInput').value;
+      if (pass === '120813') {
+        document.body.classList.add('admin-mode');
+        document.querySelectorAll('[data-editable]').forEach(el => el.setAttribute('contenteditable', 'true'));
+        document.getElementById('adminLiveToolbar').classList.replace('hidden', 'flex');
+        document.getElementById('adminLoginBtn').style.display = 'none';
+        closeLoginModal();
+        alert('Mode Édition activé ! Vous pouvez cliquer et modifier directement les textes.');
+      } else {
+        alert('Mot de passe incorrect.');
+      }
+    }
+    function adminLogout() {
+      document.body.classList.remove('admin-mode');
+      document.querySelectorAll('[data-editable]').forEach(el => el.removeAttribute('contenteditable'));
+      document.getElementById('adminLiveToolbar').classList.replace('flex', 'hidden');
+      document.getElementById('adminLoginBtn').style.display = 'flex';
+    }
+
+    function openAdminModal() { document.getElementById('adminModal').classList.replace('hidden', 'flex'); }
+    function closeAdminModal() { document.getElementById('adminModal').classList.replace('flex', 'hidden'); }
+    
+    function saveAdminConfig() {
+      webhookUrl = document.getElementById('webhookUrlInput').value;
+      localStorage.setItem('valongo_webhook', webhookUrl);
+      localStorage.setItem('gh_repo', document.getElementById('ghRepoInput').value.trim());
+      localStorage.setItem('gh_token', document.getElementById('ghTokenInput').value.trim());
+      closeAdminModal();
+      alert('Configurations enregistrées avec succès !');
+    }
+
+    // Direct GitHub Sync Function (Saves directly to GitHub repository)
+    async function saveToGitHub() {
+      const repo = localStorage.getItem('gh_repo');
+      const token = localStorage.getItem('gh_token');
+      
+      if(!repo || !token) {
+        alert("Veuillez d'abord configurer votre dépôt et votre Token GitHub dans le bouton 'Admin & GitHub'.");
+        openAdminModal();
+        return;
+      }
+
+      if(!confirm("Voulez-vous synchroniser et publier ces modifications en direct pour tout le monde sur Internet ?")) return;
+
+      // Save locally first
+      const mainContent = document.querySelector('main').innerHTML;
+      localStorage.setItem('valongo_site_state', mainContent);
+
+      // Prepare full HTML content
+      const fullHtml = '<!DOCTYPE html>\n<html lang="fr" class="dark">\n' + document.documentElement.innerHTML + '\n</html>';
+      const contentBase64 = btoa(unescape(encodeURIComponent(fullHtml)));
+
+      const apiUrl = `https://api.github.com/repos/${repo}/contents/index.html`;
+
+      try {
+        // 1. Get current file SHA on GitHub
+        const getRes = await fetch(apiUrl, {
+          headers: { 'Authorization': `token ${token}` }
+        });
+        
+        if(!getRes.ok) throw new Error("Impossible de récupérer le fichier index.html sur GitHub. Vérifiez votre nom de dépôt.");
+        const getData = await getRes.json();
+        const sha = getData.sha;
+
+        // 2. Push updated file to GitHub
+        const putRes = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: "Mise à jour automatique du site via le panneau Admin",
+            content: contentBase64,
+            sha: sha
+          })
+        });
+
+        if(putRes.ok) {
+          alert("✅ Modifications publiées avec succès sur GitHub ! Le site sera à jour pour tout le monde dans quelques secondes.");
+        } else {
+          const errData = await putRes.json();
+          alert("Erreur GitHub : " + (errData.message || "Erreur inconnue"));
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Erreur de synchronisation : " + err.message);
+      }
+    }
+
+    function exportFullHTML() {
+      const fullHtml = '<!DOCTYPE html>\n<html lang="fr" class="dark">\n' + document.documentElement.innerHTML + '\n</html>';
+      const blob = new Blob([fullHtml], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      a.click();
+    }
+
+    function openAddDirectoryModal() { document.getElementById('addDirectoryModal').classList.replace('hidden', 'flex'); }
+    function closeAddDirectoryModal() { document.getElementById('addDirectoryModal').classList.replace('flex', 'hidden'); }
+    
+    // Add Directory Card with Local File Reader, Website & Discord support
+    function confirmAddDirectoryCard() {
+      const title = document.getElementById('newCardTitle').value;
+      const cat = document.getElementById('newCardCategory').value;
+      const desc = document.getElementById('newCardDesc').value;
+      const websiteUrl = document.getElementById('newCardWebsite').value.trim();
+      const discordUrl = document.getElementById('newCardDiscord').value.trim();
+      const fileInput = document.getElementById('newCardImgFile');
+
+      if(!title) {
+        alert('Veuillez entrer au moins un titre.');
+        return;
+      }
+
+      const badgeText = cat === 'entreprise' ? 'Entreprise' : (cat === 'gang' ? 'Gang Officiel' : 'Service Public');
+      const badgeBg = cat === 'entreprise' ? 'bg-emerald-600' : (cat === 'gang' ? 'bg-purple-700' : 'bg-brand-900');
+
+      const createCardHtml = (imgSrc) => {
+        const grid = document.getElementById('directoryGrid');
+        const card = document.createElement('div');
+        card.className = "directory-card bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-brand-500/50 transition-all flex flex-col justify-between relative group";
+        card.dataset.category = cat;
+
+        let buttonsHtml = '';
+        if(websiteUrl) {
+          buttonsHtml += `<a href="${websiteUrl}" target="_blank" class="flex-grow text-center py-2.5 bg-brand-900/40 hover:bg-brand-900 border border-brand-500/40 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5"><i class="fa-solid fa-globe"></i> Site Web</a>`;
+        }
+        if(discordUrl) {
+          buttonsHtml += `<a href="${discordUrl}" target="_blank" class="flex-grow text-center py-2.5 bg-purple-900/40 hover:bg-purple-700 border border-purple-500/40 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5"><i class="fa-brands fa-discord"></i> Discord</a>`;
+        }
+        if(!buttonsHtml) {
+          buttonsHtml = `<a href="https://discord.gg" target="_blank" class="w-full text-center py-2.5 bg-brand-900/40 hover:bg-brand-900 border border-brand-500/40 text-white font-semibold rounded-xl text-xs transition-all"><i class="fa-brands fa-discord"></i> Discord</a>`;
+        }
+
+        card.innerHTML = `
+          <div class="card-admin-tools absolute top-3 right-3 z-30 gap-2">
+            <button onclick="deleteCard(this)" class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs shadow-md" title="Supprimer la carte"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <div>
+            <div class="h-48 w-full bg-slate-800 relative editable-image-container cursor-pointer" onclick="adminChangeCardImage(this)">
+              <img src="${imgSrc}" class="w-full h-full object-cover">
+              <span class="absolute top-3 left-3 ${badgeBg} text-white text-xs px-3 py-1 rounded-full font-bold uppercase shadow-lg" data-editable>${badgeText}</span>
+            </div>
+            <div class="p-6">
+              <h3 class="font-title text-2xl font-bold text-white mb-2" data-editable>${title}</h3>
+              <p class="text-slate-400 text-sm leading-relaxed mb-4" data-editable>${desc}</p>
+            </div>
+          </div>
+          <div class="p-6 pt-0 flex items-center justify-between gap-3">
+            ${buttonsHtml}
+          </div>
+        `;
+        grid.appendChild(card);
+        closeAddDirectoryModal();
+        document.getElementById('newCardTitle').value = '';
+        document.getElementById('newCardDesc').value = '';
+        document.getElementById('newCardWebsite').value = '';
+        document.getElementById('newCardDiscord').value = '';
+        document.getElementById('newCardImgFile').value = '';
+
+        if(document.body.classList.contains('admin-mode')) {
+          document.querySelectorAll('[data-editable]').forEach(el => el.setAttribute('contenteditable', 'true'));
+        }
+      };
+
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          createCardHtml(e.target.result);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        createCardHtml('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80');
+      }
+    }
+
+    function deleteCard(btn) {
+      if(confirm('Voulez-vous supprimer cette carte ?')) {
+        btn.closest('.directory-card').remove();
+      }
+    }
+
+    function adminChangeCardImage(container) {
+      if(!document.body.classList.contains('admin-mode')) return;
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = e => {
+        const file = e.target.files[0];
+        if(file) {
+          const reader = new FileReader();
+          reader.onload = event => {
+            const img = container.querySelector('img');
+            if(img) img.src = event.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+    }
+
+    function adminChangeLogo(e) {
+      if(!document.body.classList.contains('admin-mode')) return;
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = event => {
+        const file = event.target.files[0];
+        if(file) {
+          const reader = new FileReader();
+          reader.onload = ev => {
+            document.getElementById('navLogoImg').src = ev.target.result;
+            document.getElementById('mainLogoImg').src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+    }
+
+    function adminChangeHeroBg(e) {
+      if(!document.body.classList.contains('admin-mode')) return;
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = event => {
+        const file = event.target.files[0];
+        if(file) {
+          const reader = new FileReader();
+          reader.onload = ev => {
+            document.getElementById('heroBgImage').style.backgroundImage = `url('${ev.target.result}')`;
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+    }
+  </script>
+</body>
+</html>
