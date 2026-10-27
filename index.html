@@ -94,6 +94,9 @@
             <button onclick="openAddItemModal()" class="px-3.5 py-2 bg-[#00a86b] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md flex-shrink-0">
                 <i class="fa-solid fa-plus text-xs"></i> Ajouter Carte
             </button>
+            <button onclick="openButtonModal()" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md flex-shrink-0">
+                <i class="fa-solid fa-link text-xs"></i> + Bouton
+            </button>
             <button onclick="openCreateSectionModal()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md flex-shrink-0">
                 <i class="fa-solid fa-folder-plus text-xs"></i> + Salon
             </button>
@@ -133,9 +136,7 @@
                 <button onclick="toggleAdminModal()" id="admin-status-btn" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-2">
                     <i class="fa-solid fa-lock text-blue-500"></i> <span id="admin-status-text">ADMIN</span>
                 </button>
-                <a href="fivem://connect g17.cloudfive.xyz:30154" class="hidden sm:inline-flex bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2 rounded-xl transition items-center gap-2 shadow-lg shadow-blue-600/20">
-                    <i class="fa-solid fa-play text-xs"></i> Jouer
-                </a>
+                <div id="header-buttons" class="hidden sm:flex items-center gap-2"></div>
             </div>
         </div>
         <div id="mobile-nav" class="md:hidden border-t border-slate-800 bg-[#080d19] px-4 py-3 hidden flex-col space-y-2 text-sm font-medium text-slate-300"></div>
@@ -156,14 +157,7 @@
                 <p class="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto mb-8 font-light" data-editable data-static="heroText">
                     Plongez dans un univers Roleplay totalement inédit sur GTA V. Économie semi-réaliste, entreprises sur-mesure, légal & illégal équilibrés.
                 </p>
-                <div class="flex flex-wrap justify-center gap-4">
-                    <a href="#reglement" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-lg shadow-blue-600/30">
-                        <i class="fa-solid fa-book"></i> Lire le Règlement
-                    </a>
-                    <a href="https://discord.gg" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-6 py-3 rounded-xl transition flex items-center gap-2">
-                        <i class="fa-brands fa-discord text-blue-400"></i> Rejoindre Discord
-                    </a>
-                </div>
+                <div id="hero-buttons" class="flex flex-wrap justify-center gap-4"></div>
             </div>
         </section>
 
@@ -248,6 +242,51 @@
                     </select>
                 </div>
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition">Créer</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Bouton -->
+    <div id="button-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-lg shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-link text-blue-500"></i> Ajouter / Modifier un Bouton</h3>
+                <button onclick="closeModal('button-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleSaveButton(event)" class="space-y-4">
+                <input type="hidden" id="bt-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Texte du bouton</label>
+                    <input type="text" id="bt-label" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Lien (URL)</label>
+                    <input type="text" id="bt-url" required placeholder="https://discord.gg/xxxx  ou  #reglement  ou  fivem://connect ip:port" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Icône (classe FontAwesome, optionnel)</label>
+                    <input type="text" id="bt-icon" placeholder="fa-brands fa-discord" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Style</label>
+                        <select id="bt-style" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm">
+                            <option value="primary">Bleu (principal)</option>
+                            <option value="secondary">Gris (secondaire)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Emplacement</label>
+                        <select id="bt-zone" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm">
+                            <option value="hero">Page d'accueil</option>
+                            <option value="header">Barre du haut</option>
+                        </select>
+                    </div>
+                </div>
+                <label class="flex items-center gap-2 text-sm text-slate-300">
+                    <input type="checkbox" id="bt-newtab" class="rounded"> Ouvrir dans un nouvel onglet
+                </label>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition">Enregistrer le bouton</button>
             </form>
         </div>
     </div>
@@ -434,6 +473,86 @@
             });
         }
 
+        // ================= BOUTONS (ajout / modification / suppression) =================
+        const defaultButtons = [
+            { id: 'b1', zone: 'hero', label: 'Lire le Règlement', url: '#reglement', icon: 'fa-solid fa-book', style: 'primary', newTab: false },
+            { id: 'b2', zone: 'hero', label: 'Rejoindre Discord', url: 'https://discord.gg', icon: 'fa-brands fa-discord', style: 'secondary', newTab: true },
+            { id: 'b3', zone: 'header', label: 'Jouer', url: 'fivem://connect g17.cloudfive.xyz:30154', icon: 'fa-solid fa-play', style: 'primary', newTab: false }
+        ];
+        function getButtons() {
+            return Array.isArray(appState.siteConfig.buttons) ? appState.siteConfig.buttons : defaultButtons;
+        }
+        function escHtml(t) {
+            return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        function safeUrl(u) {
+            u = String(u || '').trim();
+            return /^(javascript|data|vbscript):/i.test(u) ? '#' : u;
+        }
+        function safeIcon(i) {
+            return /^[a-z0-9 \-]+$/i.test(i || '') ? i : '';
+        }
+        function buttonClass(b) {
+            const small = b.zone === 'header';
+            const size = small ? 'text-xs px-4 py-2' : 'px-6 py-3';
+            return b.style === 'secondary'
+                ? `bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold ${size} rounded-xl transition inline-flex items-center gap-2`
+                : `bg-blue-600 hover:bg-blue-700 text-white font-semibold ${size} rounded-xl transition inline-flex items-center gap-2 shadow-lg shadow-blue-600/30`;
+        }
+        function renderButtons() {
+            ['hero', 'header'].forEach(zone => {
+                const box = document.getElementById(zone + '-buttons');
+                if (!box) return;
+                box.innerHTML = getButtons().filter(b => b.zone === zone).map(b => {
+                    const icon = safeIcon(b.icon);
+                    const iconHtml = icon ? `<i class="${icon}${b.style === 'secondary' ? ' text-blue-400' : ''}"></i>` : '';
+                    const target = b.newTab ? ' target="_blank" rel="noopener noreferrer"' : '';
+                    const link = `<a href="${escHtml(safeUrl(b.url))}"${target} class="${buttonClass(b)}"${appState.isAdmin ? ' onclick="return false"' : ''}>${iconHtml} ${escHtml(b.label)}</a>`;
+                    if (!appState.isAdmin) return link;
+                    return `<span class="relative inline-flex">${link}
+                        <span class="absolute -top-2 -right-2 flex gap-1">
+                            <button onclick="event.stopPropagation(); openButtonModal('${b.id}')" class="w-6 h-6 rounded-full bg-sky-600 text-white text-[10px]"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="event.stopPropagation(); deleteButton('${b.id}')" class="w-6 h-6 rounded-full bg-red-600 text-white text-[10px]"><i class="fa-solid fa-trash"></i></button>
+                        </span></span>`;
+                }).join('');
+            });
+        }
+        function openButtonModal(id) {
+            const b = id ? getButtons().find(x => x.id === id) : null;
+            document.getElementById('bt-id').value = b ? b.id : '';
+            document.getElementById('bt-label').value = b ? b.label : '';
+            document.getElementById('bt-url').value = b ? b.url : '';
+            document.getElementById('bt-icon').value = b ? (b.icon || '') : '';
+            document.getElementById('bt-style').value = b ? b.style : 'primary';
+            document.getElementById('bt-zone').value = b ? b.zone : 'hero';
+            document.getElementById('bt-newtab').checked = b ? !!b.newTab : true;
+            openModal('button-modal');
+        }
+        function handleSaveButton(e) {
+            e.preventDefault();
+            const list = getButtons().map(x => ({ ...x }));
+            const id = document.getElementById('bt-id').value;
+            const data = {
+                label: document.getElementById('bt-label').value.trim(),
+                url: safeUrl(document.getElementById('bt-url').value),
+                icon: safeIcon(document.getElementById('bt-icon').value.trim()),
+                style: document.getElementById('bt-style').value,
+                zone: document.getElementById('bt-zone').value,
+                newTab: document.getElementById('bt-newtab').checked
+            };
+            const existing = id ? list.find(x => x.id === id) : null;
+            if (existing) Object.assign(existing, data);
+            else list.push({ id: 'b' + Date.now(), ...data });
+            appState.siteConfig.buttons = list;
+            closeModal('button-modal');
+            saveState();
+        }
+        function deleteButton(id) {
+            if (!confirm('Supprimer ce bouton ?')) return;
+            appState.siteConfig.buttons = getButtons().filter(x => x.id !== id);
+            saveState();
+        }
+
         function saveState() {
             try {
                 localStorage.setItem('valongo_sections', JSON.stringify(appState.sections));
@@ -449,6 +568,7 @@
             renderNavbar();
             renderLogoAndHero();
             renderSections();
+            renderButtons();
             applyStaticTexts();
             updateAdminUI();
         }
@@ -497,6 +617,7 @@
 
         function checkHeroClick(e) {
             if (!appState.isAdmin) return;
+            if (e.target.closest('#hero-buttons, [data-editable], a, button, input, select')) return;
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
